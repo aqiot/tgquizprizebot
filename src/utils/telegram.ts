@@ -57,7 +57,7 @@ export const showConfirm = (message: string): Promise<boolean> => {
         resolve(confirmed);
       });
     } else {
-      resolve(confirm(message));
+      resolve(window.confirm(message));
     }
   });
 };

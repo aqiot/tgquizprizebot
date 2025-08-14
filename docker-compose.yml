@@ -12,10 +12,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=${PORT:-3001}
-      # Option 1: Use mounted JSON file (recommended)
-      - GOOGLE_SERVICE_ACCOUNT_FILE=/app/google-credentials.json
-      # Option 2: Pass JSON as environment variable
-      # - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
+      # Option 1: Use mounted JSON file (alternative)
+      # - GOOGLE_SERVICE_ACCOUNT_FILE=/app/google-credentials.json
+      # Option 2: Pass JSON as environment variable (recommended)
+      - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
       # Option 3: Individual variables (backward compatibility)
       # - GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID}
       # - GOOGLE_PRIVATE_KEY_ID=${GOOGLE_PRIVATE_KEY_ID}
@@ -23,7 +23,7 @@ services:
       # - GOOGLE_CLIENT_EMAIL=${GOOGLE_CLIENT_EMAIL}
       # - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       # - GOOGLE_CLIENT_CERT_URL=${GOOGLE_CLIENT_CERT_URL}
-    volumes:
+    # volumes:
       # Mount the credentials file (if using file-based approach)
       # - ./google-credentials.json:/app/google-credentials.json:ro
     #networks:

@@ -98,7 +98,7 @@ app.get('/api/quizzes', async (req, res) => {
     const sheets = await getGoogleSheetsClient();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: QUIZ_SPREADSHEET_ID,
-      range: 'Quizzes!A:O'
+      range: 'questions!A:O'
     });
 
     const rows = response.data.values || [];
@@ -118,7 +118,7 @@ app.get('/api/quizzes', async (req, res) => {
     // Group by quizID and filter published quizzes
     const quizMap = new Map();
     quizData.forEach(row => {
-      if (row.published === 'true') {
+      if (row.published && row.published.toLowerCase() === 'true') {
         if (!quizMap.has(row.quizID)) {
           quizMap.set(row.quizID, {
             quizID: row.quizID,
@@ -161,7 +161,7 @@ app.get('/api/quizzes/:id', async (req, res) => {
     const sheets = await getGoogleSheetsClient();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: QUIZ_SPREADSHEET_ID,
-      range: 'Quizzes!A:O'
+      range: 'questions!A:O'
     });
 
     const rows = response.data.values || [];
@@ -178,7 +178,7 @@ app.get('/api/quizzes/:id', async (req, res) => {
         });
         return obj;
       })
-      .filter(row => row.quizID === req.params.id && row.published === 'true');
+      .filter(row => row.quizID === req.params.id && row.published && row.published.toLowerCase() === 'true');
 
     if (quizData.length === 0) {
       return res.status(404).json({ error: 'Quiz not found' });

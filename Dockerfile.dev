@@ -1,0 +1,22 @@
+# Development Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies for better development experience
+RUN apk add --no-cache git
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies)
+RUN npm install
+
+# Copy application code
+COPY . .
+
+# Expose ports for React dev server and Node.js server
+EXPOSE 3000 3001
+
+# Start both servers using concurrently
+CMD ["npm", "run", "dev"]

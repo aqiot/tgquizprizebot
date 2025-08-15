@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: telegram-quiz-dev
+    ports:
+      - "3000:3000"  # React dev server
+      - "3001:3001"  # Node.js API server
+    volumes:
+      # Mount source code for hot-reloading
+      - ./src:/app/src:delegated
+      - ./public:/app/public:delegated
+      - ./server.js:/app/server.js:delegated
+      - ./.env:/app/.env:ro
+      # Mount Google credentials file
+      - ./google-credentials.json:/app/google-credentials.json:ro
+      # Prevent node_modules from being overwritten
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes in Docker
+      - WATCHPACK_POLLING=true
+      - PORT=3001
+      # Option 1: Use mounted JSON file (recommended)
+      - GOOGLE_SERVICE_ACCOUNT_FILE=/app/google-credentials.json
+      # Option 2: Pass JSON as environment variable
+      # - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
+      # Option 3: Individual variables (backward compatibility)
+      # - GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID}
+      # - GOOGLE_PRIVATE_KEY_ID=${GOOGLE_PRIVATE_KEY_ID}
+      # - GOOGLE_PRIVATE_KEY=${GOOGLE_PRIVATE_KEY}
+      # - GOOGLE_CLIENT_EMAIL=${GOOGLE_CLIENT_EMAIL}
+      # - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      # - GOOGLE_CLIENT_CERT_URL=${GOOGLE_CLIENT_CERT_URL}
+    stdin_open: true
+    tty: true
+    networks:
+      - quiz-dev-network
+
+networks:
+  quiz-dev-network:
+    driver: bridge

@@ -10,6 +10,8 @@ html, body {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
+  /* Prevent white flash on load */
+  background: #f5f7fa;
 }
 
 body {
@@ -28,6 +30,16 @@ body {
   display: flex;
   flex-direction: column;
   background: #f5f7fa;
+  /* Prevent layout shifts during navigation */
+  overflow: hidden;
+  /* Start with opacity 0 to prevent FOUC */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Show app when loaded */
+.app.loaded {
+  opacity: 1;
 }
 
 .app-content {
@@ -36,6 +48,42 @@ body {
   width: 100%;
   /* Prevent layout shift during transitions */
   min-height: calc(100vh - 60px);
+  /* Ensure content doesn't jump */
+  contain: layout style;
+}
+
+/* Screen container for smooth transitions */
+.screen-container {
+  width: 100%;
+  min-height: 100%;
+  /* Prevent margin collapse */
+  padding-top: 1px;
+  /* Ensure consistent rendering */
+  will-change: opacity, transform;
+  /* Enable hardware acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Prevent text selection during transitions */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable text selection after transition */
+.screen-container * {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+.screen-container button,
+.screen-container button * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 button {
@@ -43,6 +91,8 @@ button {
   outline: none;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  /* Prevent button flash on touch */
+  -webkit-touch-callout: none;
 }
 
 button:focus-visible {
@@ -139,4 +189,17 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  
+  .screen-container {
+    will-change: auto;
+  }
+  
+  .app {
+    transition: none;
+  }
+}
+
+/* Ensure smooth font loading */
+.app {
+  font-display: swap;
 }

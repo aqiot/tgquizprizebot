@@ -13,6 +13,22 @@ interface QuizProps {
   onBack: () => void;
 }
 
+// Question transition variants
+const questionVariants = {
+  enter: {
+    x: 20,
+    opacity: 0
+  },
+  center: {
+    x: 0,
+    opacity: 1
+  },
+  exit: {
+    x: -20,
+    opacity: 0
+  }
+};
+
 const Quiz: React.FC<QuizProps> = ({ quiz, onComplete, onBack }) => {
   const { t, language } = useLanguage();
   const [state, setState] = useState<QuizState>(() => {
@@ -76,7 +92,7 @@ const Quiz: React.FC<QuizProps> = ({ quiz, onComplete, onBack }) => {
       clearQuizProgress();
       setTimeout(() => {
         onComplete(newAnswers);
-      }, 200);
+      }, 150);
     } else {
       // Move to next question
       setTimeout(() => {
@@ -87,7 +103,7 @@ const Quiz: React.FC<QuizProps> = ({ quiz, onComplete, onBack }) => {
         });
         setSelectedAnswer(null);
         setIsTransitioning(false);
-      }, 200);
+      }, 150);
     }
   };
 
@@ -120,14 +136,18 @@ const Quiz: React.FC<QuizProps> = ({ quiz, onComplete, onBack }) => {
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={state.currentQuestionIndex}
           className="question-content"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
+          variants={questionVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{
+            x: { type: "spring", stiffness: 300, damping: 30 },
+            opacity: { duration: 0.2 }
+          }}
         >
           <h2 className="question-text">{questionText}</h2>
 
@@ -140,7 +160,7 @@ const Quiz: React.FC<QuizProps> = ({ quiz, onComplete, onBack }) => {
                 disabled={isTransitioning}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                initial={{ opacity: 0, y: 10 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >

@@ -4,9 +4,24 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Prevent FOUC by adding loaded class after fonts are ready
+if ('fonts' in document) {
+  document.fonts.ready.then(() => {
+    document.querySelector('.app')?.classList.add('loaded');
+  });
+} else {
+  // Fallback for browsers that don't support font loading API
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.querySelector('.app')?.classList.add('loaded');
+    }, 100);
+  });
+}
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+
 root.render(
   <React.StrictMode>
     <App />

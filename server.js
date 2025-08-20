@@ -265,8 +265,8 @@ app.get('/api/campaign-link', (req, res) => {
     return res.status(400).json({ error: 'campaign_id is required' });
   }
 
-  const encodedCampaignId = Buffer.from(campaign_id).toString('base64');
-  const url = `t.me/tgquizprizebot/app?startapp=${encodedCampaignId}`;
+  // Use campaign_id directly in the URL without encoding
+  const url = `t.me/tgquizprizebot/app?startapp=${campaign_id}`;
   
   res.json({ url });
 });

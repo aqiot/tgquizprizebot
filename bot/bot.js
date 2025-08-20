@@ -21,23 +21,28 @@ const userStates = new Map();
 // Command: /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  const firstName = msg.from.first_name || 'User';
+  const userLanguage = msg.from.language_code;
+  
+  // Determine if user locale is Russian
+  const isRussian = userLanguage && userLanguage.toLowerCase().startsWith('ru');
+  
+  // Localized welcome messages
+  const welcomeMessage = isRussian 
+    ? "Привет! Добро пожаловать в Квизы с призами. Проходи квизы каждую неделю и участвуй в розыгрышах. Скорее начинай!"
+    : "Hey, welcome to Quizzes with Prizes. Complete the quizzes every week and participate in the Giveaways. Open app to start";
+  
+  const buttonText = isRussian ? "🎮 Открыть приложение" : "🎮 Open App";
   
   bot.sendMessage(chatId, 
-    `👋 Welcome ${firstName}!\n\n` +
-    `I'm the Quiz Prize Bot! Here's what I can do:\n\n` +
-    `🎯 /createcampaign - Create a campaign link\n` +
-    `📊 /campaigns - List all campaigns\n` +
-    `❓ /help - Show this help message\n\n` +
-    `Ready to create engaging quiz campaigns? Let's get started!`,
+    welcomeMessage,
     {
       parse_mode: 'HTML',
       reply_markup: {
-        keyboard: [
-          ['/createcampaign', '/campaigns'],
-          ['/help']
-        ],
-        resize_keyboard: true
+        inline_keyboard: [
+          [
+            { text: buttonText, url: 't.me/tgquizprizebot/app' }
+          ]
+        ]
       }
     }
   );
@@ -54,7 +59,7 @@ bot.onText(/\/help/, (msg) => {
     `<b>/campaigns</b>\n` +
     `View all existing campaign IDs from the database.\n\n` +
     `<b>/start</b>\n` +
-    `Show the welcome message and available commands.\n\n` +
+    `Show the welcome message and open the quiz app.\n\n` +
     `<b>How campaigns work:</b>\n` +
     `1. Create a campaign with a unique ID\n` +
     `2. Share the generated link with participants\n` +
@@ -76,11 +81,7 @@ bot.onText(/\/createcampaign/, (msg) => {
     `Please enter your campaign ID (e.g., <code>summer2024</code>, <code>blackfriday</code>, etc.):\n\n` +
     `<i>The campaign ID should be unique and memorable.</i>`,
     { 
-      parse_mode: 'HTML',
-      reply_markup: {
-        force_reply: true,
-        input_field_placeholder: 'Enter campaign ID...'
-      }
+      parse_mode: 'HTML'
     }
   );
 });
@@ -192,9 +193,9 @@ bot.on('message', async (msg) => {
         bot.sendMessage(chatId,
           `✅ <b>Campaign Link Created!</b>\n\n` +
           `<b>Campaign ID:</b> <code>${campaignId}</code>\n\n` +
-          `<b>Your campaign link:</b>\n` +
+          `<b>Your webapp campaign link:</b>\n` +
           `<code>${response.data.url}</code>\n\n` +
-          `📋 <i>Click the link above to copy it</i>\n\n` +
+          `📋 <i>This link will directly open the quiz webapp with your campaign ID</i>\n\n` +
           `Share this link with your participants to track their quiz results under this campaign.`,
           { 
             parse_mode: 'HTML',

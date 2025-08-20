@@ -415,13 +415,13 @@ Returns Telegram bot link with encoded campaign ID
 | correctAnswer | Correct answer number (1-3) |
 | published | true/false to show/hide quiz |
 
-### Results Sheet
+### Participants Sheet
 | Column | Description |
 |--------|-------------|
 | tgID | Telegram user ID |
 | quizID | Quiz identifier |
 | questionsAnswered | Number of questions answered |
-| timestamp | Auto-generated timestamp |
+| campaignId | Campaign identifier (if available) |
 
 ### Campaigns Sheet
 | Column | Description |

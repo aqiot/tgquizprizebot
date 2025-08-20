@@ -213,21 +213,20 @@ app.get('/api/quizzes/:id', async (req, res) => {
 // Log quiz result
 app.post('/api/result', async (req, res) => {
   try {
-    const { tgID, quizID, questionsAnswered } = req.body;
+    const { tgID, quizID, questionsAnswered, campaignId } = req.body;
     
     if (!tgID || !quizID || questionsAnswered === undefined) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     const sheets = await getGoogleSheetsClient();
-    const timestamp = new Date().toISOString();
     
     await sheets.spreadsheets.values.append({
       spreadsheetId: QUIZ_SPREADSHEET_ID,
-      range: 'Results!A:D',
+      range: 'participants!A:D',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[tgID, quizID, questionsAnswered, timestamp]]
+        values: [[tgID, quizID, questionsAnswered, campaignId || '']]
       }
     });
 

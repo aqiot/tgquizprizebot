@@ -22,6 +22,7 @@ export interface QuizResult {
   tgID: string;
   quizID: string;
   questionsAnswered: number;
+  campaignId?: string;
 }
 
 export interface Campaign {

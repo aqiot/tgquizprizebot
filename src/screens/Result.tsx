@@ -47,7 +47,8 @@ const Result: React.FC<ResultProps> = ({ quiz, answers, onTryAgain, onBackToHome
       await quizAPI.submitResult({
         tgID,
         quizID: quiz.quizID,
-        questionsAnswered: answers.length
+        questionsAnswered: answers.length,
+        campaignId: campaignId || undefined
       });
     } catch (err) {
       console.error('Failed to submit result:', err);

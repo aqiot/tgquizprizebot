@@ -8,6 +8,8 @@ import Result from './screens/Result';
 import { Quiz as QuizType } from './types';
 import { initTelegram } from './utils/telegram';
 import analytics from './services/analytics';
+import { quizAPI } from './services/api';
+import { getUserData, getCampaignId } from './utils/telegram';
 import './App.css';
 
 type Screen = 'home' | 'quiz' | 'result';
@@ -49,6 +51,26 @@ function App() {
     
     // Track app load
     analytics.trackPageView('home');
+    
+    // Track webapp open event
+    const trackWebappOpen = async () => {
+      try {
+        const userData = getUserData();
+        const campaignId = getCampaignId();
+        const tgID = userData?.id?.toString() || 'anonymous';
+        
+        await quizAPI.submitResult({
+          tgID,
+          quizID: 'webapp_open',
+          questionsAnswered: 0,
+          campaignId: campaignId || undefined
+        });
+      } catch (err) {
+        console.error('Failed to track webapp open:', err);
+      }
+    };
+    
+    trackWebappOpen();
     
     // Mark app as ready after a brief delay to ensure smooth initial render
     const timer = setTimeout(() => {

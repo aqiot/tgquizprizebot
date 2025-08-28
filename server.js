@@ -99,7 +99,7 @@ app.get('/api/quizzes', async (req, res) => {
     const sheets = await getGoogleSheetsClient();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: QUIZ_SPREADSHEET_ID,
-      range: 'questions!A:O'
+      range: 'questions!A:U'  // Extended range to include promo fields
     });
 
     const rows = response.data.values || [];
@@ -125,6 +125,12 @@ app.get('/api/quizzes', async (req, res) => {
             quizID: row.quizID,
             quizName: row.quizName,
             quizNameRU: row.quizNameRU,
+            promo: row.Promo && row.Promo.toLowerCase() === 'true',
+            promoOffer4: row.PromoOffer4 || '',
+            promoOfferRU4: row.PromoOfferRU4 || '',
+            promoOffer6: row.PromoOffer6 || '',
+            promoOfferRU6: row.PromoOfferRU6 || '',
+            promoOfferLink: row.PromoOfferLink || '',
             questions: []
           });
         }
@@ -162,7 +168,7 @@ app.get('/api/quizzes/:id', async (req, res) => {
     const sheets = await getGoogleSheetsClient();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: QUIZ_SPREADSHEET_ID,
-      range: 'questions!A:O'
+      range: 'questions!A:U'  // Extended range to include promo fields
     });
 
     const rows = response.data.values || [];
@@ -189,6 +195,12 @@ app.get('/api/quizzes/:id', async (req, res) => {
       quizID: quizData[0].quizID,
       quizName: quizData[0].quizName,
       quizNameRU: quizData[0].quizNameRU,
+      promo: quizData[0].Promo && quizData[0].Promo.toLowerCase() === 'true',
+      promoOffer4: quizData[0].PromoOffer4 || '',
+      promoOfferRU4: quizData[0].PromoOfferRU4 || '',
+      promoOffer6: quizData[0].PromoOffer6 || '',
+      promoOfferRU6: quizData[0].PromoOfferRU6 || '',
+      promoOfferLink: quizData[0].PromoOfferLink || '',
       questions: quizData.map(row => ({
         questionID: parseInt(row.questionID),
         question: row.question,
@@ -214,7 +226,7 @@ app.get('/api/quizzes/:id', async (req, res) => {
 // Log quiz result
 app.post('/api/result', async (req, res) => {
   try {
-    const { tgID, quizID, questionsAnswered, campaignId } = req.body;
+    const { tgID, quizID, questionsAnswered, campaignId, clickLink } = req.body;
     
     if (!tgID || !quizID || questionsAnswered === undefined) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -224,10 +236,10 @@ app.post('/api/result', async (req, res) => {
     
     await sheets.spreadsheets.values.append({
       spreadsheetId: QUIZ_SPREADSHEET_ID,
-      range: 'participants!A:D',
+      range: 'participants!A:E',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[tgID, quizID, questionsAnswered, campaignId || '']]
+        values: [[tgID, quizID, questionsAnswered, campaignId || '', clickLink || false]]
       }
     });
 

@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Quiz as QuizType, QuizState } from '../types';
 import { saveQuizProgress, loadQuizProgress, clearQuizProgress } from '../utils/storage';
-import { hapticFeedback } from '../utils/telegram';
+import { hapticFeedback, getUserData, getCampaignId } from '../utils/telegram';
+import { quizAPI } from '../services/api';
 import { QuestionSkeleton } from '../components/Skeleton';
 import analytics from '../services/analytics';
 import './Quiz.css';
@@ -52,6 +53,28 @@ const Quiz: React.FC<QuizProps> = ({ quiz, onComplete, onBack }) => {
   const progress = ((state.currentQuestionIndex + 1) / questions.length) * 100;
 
   useEffect(() => {
+    // Track quiz start when component mounts
+    const trackQuizStart = async () => {
+      if (state.answers.length === 0) {
+        try {
+          const userData = getUserData();
+          const campaignId = getCampaignId();
+          const tgID = userData?.id?.toString() || 'anonymous';
+          
+          await quizAPI.submitResult({
+            tgID,
+            quizID: `${quiz.quizID}_start`,
+            questionsAnswered: 0,
+            campaignId: campaignId || undefined
+          });
+        } catch (err) {
+          console.error('Failed to track quiz start:', err);
+        }
+      }
+    };
+    
+    trackQuizStart();
+    
     // Save progress on each answer
     if (state.answers.length > 0) {
       saveQuizProgress(quiz.quizID, state);
@@ -71,7 +94,24 @@ const Quiz: React.FC<QuizProps> = ({ quiz, onComplete, onBack }) => {
     }
   }, []);
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    // Track incomplete quiz if user has answered some questions
+    if (state.answers.length > 0) {
+      try {
+        const userData = getUserData();
+        const campaignId = getCampaignId();
+        const tgID = userData?.id?.toString() || 'anonymous';
+        
+        await quizAPI.submitResult({
+          tgID,
+          quizID: quiz.quizID,
+          questionsAnswered: state.answers.length,
+          campaignId: campaignId || undefined
+        });
+      } catch (err) {
+        console.error('Failed to track incomplete quiz:', err);
+      }
+    }
     onBack();
   };
 

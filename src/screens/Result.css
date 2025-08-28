@@ -108,6 +108,29 @@
   cursor: not-allowed;
 }
 
+.promo-button {
+  background: linear-gradient(135deg, #00BCD4 0%, #008BA3 100%);
+  box-shadow: 0 4px 16px rgba(0, 188, 212, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 4px 16px rgba(0, 188, 212, 0.3);
+  }
+  50% {
+    box-shadow: 0 6px 24px rgba(0, 188, 212, 0.5);
+  }
+  100% {
+    box-shadow: 0 4px 16px rgba(0, 188, 212, 0.3);
+  }
+}
+
+.promo-button:hover {
+  background: linear-gradient(135deg, #00ACC1 0%, #00796B 100%);
+  box-shadow: 0 6px 24px rgba(0, 188, 212, 0.5);
+}
+
 .try-again-button {
   background: #229ED9;
   color: white;

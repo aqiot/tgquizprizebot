@@ -16,6 +16,12 @@ export interface Quiz {
   quizName: string;
   quizNameRU: string;
   questions: Question[];
+  promo?: boolean;
+  promoOffer4?: string;
+  promoOfferRU4?: string;
+  promoOffer6?: string;
+  promoOfferRU6?: string;
+  promoOfferLink?: string;
 }
 
 export interface QuizResult {
@@ -23,6 +29,7 @@ export interface QuizResult {
   quizID: string;
   questionsAnswered: number;
   campaignId?: string;
+  clickLink?: boolean;
 }
 
 export interface Campaign {

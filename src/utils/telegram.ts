@@ -27,10 +27,15 @@ export const getUserData = (): UserData | null => {
 export const getCampaignId = (): string | null => {
   if (window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
     try {
-      return atob(window.Telegram.WebApp.initDataUnsafe.start_param);
+      // The start_param is already Base64 encoded from the bot
+      const decodedId = atob(window.Telegram.WebApp.initDataUnsafe.start_param);
+      console.log('Campaign ID decoded:', decodedId);
+      return decodedId;
     } catch (e) {
       console.error('Failed to decode campaign ID:', e);
-      return null;
+      // If decoding fails, it might be a plain campaign ID (for backward compatibility)
+      console.log('Using raw campaign ID:', window.Telegram.WebApp.initDataUnsafe.start_param);
+      return window.Telegram.WebApp.initDataUnsafe.start_param;
     }
   }
   return null;

@@ -27,6 +27,7 @@ app.get('/api/health', (req, res) => {
 // Google Sheets configuration
 const QUIZ_SPREADSHEET_ID = '1RKK7sohIl3vYUvEoESmGNkT54u1kTE-swnGxUjWnBh0';
 const CAMPAIGN_SPREADSHEET_ID = '1YxRImYKl_i3aeikfkIvhwwQxaTbej_j0mkLbNLqOrnc';
+const ANALYTICS_SPREADSHEET_ID = '1RKK7sohIl3vYUvEoESmGNkT54u1kTE-swnGxUjWnBh0'; // Using the same sheet for analytics
 
 // Load Google Service Account credentials
 function loadGoogleCredentials() {
@@ -264,10 +265,103 @@ app.get('/api/campaign-link', (req, res) => {
     return res.status(400).json({ error: 'campaign_id is required' });
   }
 
-  // Use campaign_id directly in the URL without encoding
-  const url = `t.me/tgquizprizebot/app?startapp=${campaign_id}`;
+  // Encode campaign_id in Base64 for secure tracking
+  const encodedId = Buffer.from(campaign_id).toString('base64');
+  const url = `t.me/tgquizprizebot/app?startapp=${encodedId}`;
   
-  res.json({ url });
+  res.json({ 
+    url,
+    encodedId,
+    campaignId: campaign_id 
+  });
+});
+
+// Analytics tracking endpoint
+app.post('/api/analytics/track', async (req, res) => {
+  try {
+    const { 
+      userId, 
+      campaignId, 
+      action, 
+      details, 
+      timestamp, 
+      sessionId,
+      source,
+      medium,
+      referrer 
+    } = req.body;
+    
+    if (!userId || !action) {
+      return res.status(400).json({ error: 'userId and action are required' });
+    }
+
+    const sheets = await getGoogleSheetsClient();
+    
+    // Prepare row data for Google Sheets
+    const rowData = [
+      timestamp || new Date().toISOString(),
+      userId,
+      campaignId || '',
+      action,
+      source || '',
+      medium || '',
+      referrer || '',
+      sessionId || '',
+      JSON.stringify(details || {})
+    ];
+    
+    // Append to Analytics sheet (create sheet if it doesn't exist)
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: ANALYTICS_SPREADSHEET_ID,
+      range: 'Analytics!A:I',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [rowData]
+      }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error tracking analytics:', error);
+    res.status(500).json({ error: 'Failed to track analytics' });
+  }
+});
+
+// Get analytics data for a campaign
+app.get('/api/analytics/campaign/:campaignId', async (req, res) => {
+  try {
+    const { campaignId } = req.params;
+    const sheets = await getGoogleSheetsClient();
+    
+    // Get analytics data from sheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: ANALYTICS_SPREADSHEET_ID,
+      range: 'Analytics!A:I'
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length === 0) {
+      return res.json({ analytics: [] });
+    }
+
+    // Filter by campaign ID
+    const headers = ['timestamp', 'userId', 'campaignId', 'action', 'source', 'medium', 'referrer', 'sessionId', 'details'];
+    const analyticsData = rows
+      .slice(1) // Skip header row if exists
+      .map(row => {
+        const obj = {};
+        headers.forEach((header, index) => {
+          obj[header] = row[index] || '';
+        });
+        return obj;
+      })
+      .filter(row => row.campaignId === campaignId);
+
+    res.json({ analytics: analyticsData });
+  } catch (error) {
+    console.error('Error fetching analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
 });
 
 // Serve static files in production

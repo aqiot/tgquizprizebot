@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Quiz } from '../types';
 import { quizAPI } from '../services/api';
 import { getUserData, getCampaignId, sendDataToBot, hapticFeedback } from '../utils/telegram';
+import analytics from '../services/analytics';
 import './Result.css';
 
 interface ResultProps {
@@ -33,11 +34,24 @@ const Result: React.FC<ResultProps> = ({ quiz, answers, onTryAgain, onBackToHome
     // Submit result to backend
     submitResult();
     
+    // Track quiz completion
+    analytics.trackQuizComplete(quiz.quizID, correctCount, 6);
+    
     // Haptic feedback based on result
     if (isWinner) {
       hapticFeedback.notification('success');
+      analytics.trackAction('quiz_winner', { 
+        quizId: quiz.quizID, 
+        score: correctCount,
+        campaignId: campaignId 
+      });
     } else {
       hapticFeedback.notification('warning');
+      analytics.trackAction('quiz_not_winner', { 
+        quizId: quiz.quizID, 
+        score: correctCount,
+        campaignId: campaignId 
+      });
     }
   }, []);
 

@@ -7,6 +7,7 @@ import Quiz from './screens/Quiz';
 import Result from './screens/Result';
 import { Quiz as QuizType } from './types';
 import { initTelegram } from './utils/telegram';
+import analytics from './services/analytics';
 import './App.css';
 
 type Screen = 'home' | 'quiz' | 'result';
@@ -46,6 +47,9 @@ function App() {
     // Initialize Telegram WebApp
     initTelegram();
     
+    // Track app load
+    analytics.trackPageView('home');
+    
     // Mark app as ready after a brief delay to ensure smooth initial render
     const timer = setTimeout(() => {
       setIsReady(true);
@@ -58,22 +62,29 @@ function App() {
   const handleStartQuiz = (quiz: QuizType) => {
     setSelectedQuiz(quiz);
     setCurrentScreen('quiz');
+    analytics.trackQuizStart(quiz.quizID, quiz.quizName);
+    analytics.trackPageView('quiz');
   };
 
   const handleQuizComplete = (answers: number[]) => {
     setQuizAnswers(answers);
     setCurrentScreen('result');
+    analytics.trackPageView('result');
   };
 
   const handleTryAgain = () => {
     setQuizAnswers([]);
     setCurrentScreen('quiz');
+    analytics.trackButtonClick('try_again', { quizId: selectedQuiz?.quizID });
+    analytics.trackPageView('quiz');
   };
 
   const handleBackToHome = () => {
     setSelectedQuiz(null);
     setQuizAnswers([]);
     setCurrentScreen('home');
+    analytics.trackButtonClick('back_to_home');
+    analytics.trackPageView('home');
   };
 
   return (

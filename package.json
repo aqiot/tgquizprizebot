@@ -31,7 +31,9 @@
     "eject": "react-scripts eject",
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
-    "prod": "NODE_ENV=production node server.js"
+    "prod": "NODE_ENV=production node server.js",
+    "setup-analytics": "node setup-analytics.js",
+    "test-analytics": "node test-analytics.js"
   },
   "eslintConfig": {
     "extends": [

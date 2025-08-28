@@ -5,6 +5,7 @@ import { Quiz as QuizType, QuizState } from '../types';
 import { saveQuizProgress, loadQuizProgress, clearQuizProgress } from '../utils/storage';
 import { hapticFeedback } from '../utils/telegram';
 import { QuestionSkeleton } from '../components/Skeleton';
+import analytics from '../services/analytics';
 import './Quiz.css';
 
 interface QuizProps {
@@ -86,6 +87,15 @@ const Quiz: React.FC<QuizProps> = ({ quiz, onComplete, onBack }) => {
     setIsTransitioning(true);
 
     const newAnswers = [...state.answers, selectedAnswer];
+    
+    // Track question answer
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+    analytics.trackQuizQuestion(
+      quiz.quizID,
+      currentQuestion.questionID,
+      selectedAnswer,
+      isCorrect
+    );
     
     if (state.currentQuestionIndex === questions.length - 1) {
       // Quiz completed

@@ -58,12 +58,15 @@ bot.onText(/\/help/, (msg) => {
     `Create a unique campaign link for your quiz. Just provide a campaign ID and get a shareable link.\n\n` +
     `<b>/campaigns</b>\n` +
     `View all existing campaign IDs from the database.\n\n` +
+    `<b>/analytics</b>\n` +
+    `View analytics data for a specific campaign.\n\n` +
     `<b>/start</b>\n` +
     `Show the welcome message and open the quiz app.\n\n` +
     `<b>How campaigns work:</b>\n` +
     `1. Create a campaign with a unique ID\n` +
     `2. Share the generated link with participants\n` +
-    `3. Track results by campaign ID in your dashboard\n\n` +
+    `3. Track results by campaign ID in your dashboard\n` +
+    `4. View analytics with /analytics command\n\n` +
     `Need more help? Contact support!`,
     { parse_mode: 'HTML' }
   );
@@ -79,7 +82,24 @@ bot.onText(/\/createcampaign/, (msg) => {
   bot.sendMessage(chatId,
     `🎯 <b>Create Campaign Link</b>\n\n` +
     `Please enter your campaign ID (e.g., <code>summer2024</code>, <code>blackfriday</code>, etc.):\n\n` +
-    `<i>The campaign ID should be unique and memorable.</i>`,
+    `<i>The campaign ID should be unique and memorable. It will be encoded in Base64 for tracking.</i>`,
+    { 
+      parse_mode: 'HTML'
+    }
+  );
+});
+
+// Command: /analytics
+bot.onText(/\/analytics/, (msg) => {
+  const chatId = msg.chat.id;
+  
+  // Set user state to waiting for campaign ID
+  userStates.set(chatId, { command: 'analytics', step: 'waiting_for_campaign_id' });
+  
+  bot.sendMessage(chatId,
+    `📊 <b>View Campaign Analytics</b>\n\n` +
+    `Please enter the campaign ID you want to view analytics for:\n\n` +
+    `<i>Example: summer2024, blackfriday, etc.</i>`,
     { 
       parse_mode: 'HTML'
     }
@@ -144,6 +164,95 @@ bot.on('message', async (msg) => {
   
   if (!userState) return;
   
+  // Handle analytics flow
+  if (userState.command === 'analytics' && userState.step === 'waiting_for_campaign_id') {
+    const campaignId = msg.text?.trim();
+    
+    if (!campaignId) {
+      bot.sendMessage(chatId,
+        `⚠️ Please enter a valid campaign ID.`,
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+    
+    try {
+      // Show loading message
+      const loadingMsg = await bot.sendMessage(chatId, '⏳ Loading analytics data...');
+      
+      // Fetch analytics from API
+      const response = await axios.get(`${API_BASE_URL}/api/analytics/campaign/${campaignId}`, {
+        timeout: 10000
+      });
+      
+      // Delete loading message
+      await bot.deleteMessage(chatId, loadingMsg.message_id);
+      
+      if (response.data && response.data.analytics) {
+        const analytics = response.data.analytics;
+        
+        if (analytics.length === 0) {
+          bot.sendMessage(chatId,
+            `📊 <b>No Analytics Data</b>\n\n` +
+            `No data found for campaign: <code>${campaignId}</code>\n\n` +
+            `Make sure participants have used your campaign link.`,
+            { parse_mode: 'HTML' }
+          );
+        } else {
+          // Calculate statistics
+          const uniqueUsers = new Set(analytics.map(a => a.userId)).size;
+          const sessions = new Set(analytics.map(a => a.sessionId)).size;
+          const quizStarts = analytics.filter(a => a.action === 'quiz_start').length;
+          const quizCompletes = analytics.filter(a => a.action === 'quiz_complete').length;
+          const winners = analytics.filter(a => a.action === 'quiz_winner').length;
+          
+          bot.sendMessage(chatId,
+            `📊 <b>Analytics for Campaign: ${campaignId}</b>\n\n` +
+            `👥 <b>Unique Users:</b> ${uniqueUsers}\n` +
+            `🔄 <b>Sessions:</b> ${sessions}\n` +
+            `🎮 <b>Quiz Starts:</b> ${quizStarts}\n` +
+            `✅ <b>Quiz Completes:</b> ${quizCompletes}\n` +
+            `🏆 <b>Winners (4+ correct):</b> ${winners}\n\n` +
+            `📈 <b>Conversion Rate:</b> ${quizCompletes > 0 ? Math.round((quizCompletes / quizStarts) * 100) : 0}%\n` +
+            `🎯 <b>Win Rate:</b> ${quizCompletes > 0 ? Math.round((winners / quizCompletes) * 100) : 0}%\n\n` +
+            `<i>Data is tracked in real-time and stored in Google Sheets.</i>`,
+            { 
+              parse_mode: 'HTML',
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    { text: '📊 View Another Campaign', callback_data: 'view_another_analytics' },
+                    { text: '📋 View All Campaigns', callback_data: 'view_campaigns' }
+                  ]
+                ]
+              }
+            }
+          );
+        }
+        
+        // Clear user state
+        userStates.delete(chatId);
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error.message);
+      
+      // Clear user state
+      userStates.delete(chatId);
+      
+      bot.sendMessage(chatId,
+        `❌ <b>Error Fetching Analytics</b>\n\n` +
+        `Failed to fetch analytics for campaign: <code>${campaignId}</code>\n\n` +
+        `<i>Error: ${error.message}</i>\n\n` +
+        `Please try again later or contact support.`,
+        { parse_mode: 'HTML' }
+      );
+    }
+    
+    return;
+  }
+  
   // Handle createcampaign flow
   if (userState.command === 'createcampaign' && userState.step === 'waiting_for_id') {
     const campaignId = msg.text?.trim();
@@ -176,7 +285,7 @@ bot.on('message', async (msg) => {
       // Show loading message
       const loadingMsg = await bot.sendMessage(chatId, '⏳ Creating campaign link...');
       
-      // Call API to generate campaign link
+      // Call API to generate campaign link with Base64 encoding
       const response = await axios.get(`${API_BASE_URL}/api/campaign-link`, {
         params: { campaign_id: campaignId },
         timeout: 10000
@@ -192,10 +301,11 @@ bot.on('message', async (msg) => {
         // Send success message with the link
         bot.sendMessage(chatId,
           `✅ <b>Campaign Link Created!</b>\n\n` +
-          `<b>Campaign ID:</b> <code>${campaignId}</code>\n\n` +
+          `<b>Campaign ID:</b> <code>${campaignId}</code>\n` +
+          `<b>Encoded ID (Base64):</b> <code>${response.data.encodedId}</code>\n\n` +
           `<b>Your webapp campaign link:</b>\n` +
           `<code>${response.data.url}</code>\n\n` +
-          `📋 <i>This link will directly open the quiz webapp with your campaign ID</i>\n\n` +
+          `📋 <i>This link will directly open the quiz webapp with your campaign ID encoded in Base64 for secure tracking</i>\n\n` +
           `Share this link with your participants to track their quiz results under this campaign.`,
           { 
             parse_mode: 'HTML',
@@ -255,6 +365,15 @@ bot.on('callback_query', (callbackQuery) => {
       bot.emit('text', {
         chat: { id: chatId },
         text: '/campaigns',
+        from: callbackQuery.from
+      });
+      break;
+      
+    case 'view_another_analytics':
+      // Trigger analytics command
+      bot.emit('text', {
+        chat: { id: chatId },
+        text: '/analytics',
         from: callbackQuery.from
       });
       break;
